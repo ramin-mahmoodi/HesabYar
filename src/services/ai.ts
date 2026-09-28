@@ -70,11 +70,19 @@ function extractJson(rawText: string): any {
   return JSON.parse(cleaned);
 }
 
+const CANDIDATE_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-latest",
+  "gemini-2.5-pro",
+  "gemini-flash",
+];
+
 async function callGemini(
   apiKey: string,
   parts: any[],
-  model = "gemini-1.5-flash"
+  modelIndex = 0
 ): Promise<any> {
+  const model = CANDIDATE_MODELS[modelIndex] || "gemini-2.5-flash";
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const res = await fetch(url, {
@@ -91,11 +99,10 @@ async function callGemini(
 
   if (!res.ok) {
     const errText = await res.text();
-    // اگر مدل 1.5 پیدا نشد، به مدل 2.0-flash سوئیچ کن
-    if (res.status === 404 && model !== "gemini-2.0-flash") {
-      return callGemini(apiKey, parts, "gemini-2.0-flash");
+    if (res.status === 404 && modelIndex < CANDIDATE_MODELS.length - 1) {
+      return callGemini(apiKey, parts, modelIndex + 1);
     }
-    throw new Error(`خطای سرور گوگل (${res.status}): ${errText.slice(0, 100)}`);
+    throw new Error(`خطای سرور گوگل (${res.status}): ${errText.slice(0, 120)}`);
   }
 
   const json: any = await res.json();

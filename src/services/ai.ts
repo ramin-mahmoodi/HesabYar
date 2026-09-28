@@ -74,52 +74,56 @@ let cachedModel: string | null = null;
 
 async function getAvailableModel(apiKey: string): Promise<string> {
   if (cachedModel) return cachedModel;
+  const cleanKey = apiKey.trim();
 
   try {
-    const listRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-    );
+    const listRes = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
+      headers: { "x-goog-api-key": cleanKey },
+    });
+
     if (listRes.ok) {
       const data: any = await listRes.json();
       const models: any[] = data.models || [];
       const validModels = models.filter((m) =>
-        m.supportedGenerationMethods?.includes("generateContent")
+        (m.supportedGenerationMethods || []).includes("generateContent")
       );
 
       const flash = validModels.find(
-        (m) => m.name?.includes("flash") && !m.name?.includes("deprecated")
+        (m) =>
+          String(m.name).toLowerCase().includes("flash") &&
+          !String(m.name).toLowerCase().includes("deprecated")
       );
       if (flash && flash.name) {
-        const name = String(flash.name).replace(/^models\//, "");
-        cachedModel = name;
-        return name;
+        cachedModel = String(flash.name).replace(/^models\//, "");
+        return cachedModel;
       }
 
       if (validModels.length > 0 && validModels[0].name) {
-        const name = String(validModels[0].name).replace(/^models\//, "");
-        cachedModel = name;
-        return name;
+        cachedModel = String(validModels[0].name).replace(/^models\//, "");
+        return cachedModel;
       }
     } else {
       const err = await listRes.text();
-      if (listRes.status === 400 || listRes.status === 403) {
-        throw new Error(`کلید GEMINI_API_KEY نامعتبر است: ${err.slice(0, 100)}`);
-      }
+      throw new Error(`بررسی کلید (${listRes.status}): ${err.slice(0, 120)}`);
     }
   } catch (e: any) {
-    if (e.message?.includes("کلید")) throw e;
+    if (e.message?.includes("بررسی کلید")) throw e;
   }
 
-  return "gemini-1.5-flash-latest";
+  return "gemini-2.5-flash";
 }
 
 async function callGemini(apiKey: string, parts: any[]): Promise<any> {
-  const model = await getAvailableModel(apiKey);
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const cleanKey = apiKey.trim();
+  const model = await getAvailableModel(cleanKey);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": cleanKey,
+    },
     body: JSON.stringify({
       contents: [{ parts }],
       generationConfig: {
@@ -131,11 +135,7 @@ async function callGemini(apiKey: string, parts: any[]): Promise<any> {
 
   if (!res.ok) {
     const errText = await res.text();
-    if (res.status === 404 && cachedModel !== "gemini-1.5-flash-latest") {
-      cachedModel = "gemini-1.5-flash-latest";
-      return callGemini(apiKey, parts);
-    }
-    throw new Error(`خطای سرور گوگل (${res.status} مدل ${model}): ${errText.slice(0, 120)}`);
+    throw new Error(`خطای گوگل (${res.status} با مدل ${model}): ${errText.slice(0, 120)}`);
   }
 
   const json: any = await res.json();

@@ -3,6 +3,7 @@ import { Env } from "./config";
 
 export interface BotContext extends Context {
   env: Env;
+  executionCtx?: ExecutionContext;
 }
 
 export interface Bank {

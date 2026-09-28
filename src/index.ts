@@ -15,7 +15,7 @@ import { handleVoiceMessage } from "./handlers/voice";
 import { handleReport, handleReportCallbacks } from "./handlers/reports";
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, executionCtx?: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // پاسخ صفحه سلامت برای مرورگر
@@ -37,9 +37,15 @@ export default {
     // مقداردهی اولیه ربات
     const bot = new Bot<BotContext>(env.BOT_TOKEN);
 
+    // مدیریت خطاهای سراسری جهت عدم تکرار وبهوک توسط تلگرام
+    bot.catch((err) => {
+      console.error("Bot unhandled error:", err);
+    });
+
     // میدلور تزریق env و اعتبارسنجی کاربر
     bot.use(async (ctx, next) => {
       ctx.env = env;
+      ctx.executionCtx = executionCtx;
       if (ctx.from && !isUserAllowed(ctx.from.id, env.ALLOWED_USER_IDS)) {
         await ctx.reply("⛔ شما مجاز به استفاده از این ربات حسابداری نیستید.");
         return;

@@ -70,53 +70,9 @@ function extractJson(rawText: string): any {
   return JSON.parse(cleaned);
 }
 
-let cachedModel: string | null = null;
-
-async function getAvailableModel(apiKey: string): Promise<string> {
-  if (cachedModel) return cachedModel;
-  const cleanKey = apiKey.trim();
-
-  try {
-    const listRes = await fetch("https://generativelanguage.googleapis.com/v1beta/models", {
-      headers: { "x-goog-api-key": cleanKey },
-    });
-
-    if (listRes.ok) {
-      const data: any = await listRes.json();
-      const models: any[] = data.models || [];
-      const validModels = models.filter((m) =>
-        (m.supportedGenerationMethods || []).includes("generateContent")
-      );
-
-      const flash = validModels.find(
-        (m) =>
-          String(m.name).toLowerCase().includes("flash") &&
-          !String(m.name).toLowerCase().includes("deprecated")
-      );
-      if (flash && flash.name) {
-        cachedModel = String(flash.name).replace(/^models\//, "");
-        return cachedModel;
-      }
-
-      if (validModels.length > 0 && validModels[0].name) {
-        cachedModel = String(validModels[0].name).replace(/^models\//, "");
-        return cachedModel;
-      }
-    } else {
-      const err = await listRes.text();
-      throw new Error(`بررسی کلید (${listRes.status}): ${err.slice(0, 120)}`);
-    }
-  } catch (e: any) {
-    if (e.message?.includes("بررسی کلید")) throw e;
-  }
-
-  return "gemini-2.5-flash";
-}
-
 async function callGemini(apiKey: string, parts: any[]): Promise<any> {
   const cleanKey = apiKey.trim();
-  const model = await getAvailableModel(cleanKey);
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${encodeURIComponent(cleanKey)}`;
 
   const res = await fetch(url, {
     method: "POST",
@@ -135,7 +91,7 @@ async function callGemini(apiKey: string, parts: any[]): Promise<any> {
 
   if (!res.ok) {
     const errText = await res.text();
-    throw new Error(`خطای گوگل (${res.status} با مدل ${model}): ${errText.slice(0, 120)}`);
+    throw new Error(`خطای گوگل (${res.status}): ${errText.slice(0, 150)}`);
   }
 
   const json: any = await res.json();
@@ -168,8 +124,8 @@ export async function parseReceiptWithVision(
     const base64Data = uint8ArrayToBase64(imageBytes);
     const parts = [
       {
-        inline_data: {
-          mime_type: mimeType,
+        inlineData: {
+          mimeType: mimeType,
           data: base64Data,
         },
       },
@@ -217,8 +173,8 @@ export async function parseVoiceWithGemini(
   const base64Data = uint8ArrayToBase64(audioBytes);
   const parts = [
     {
-      inline_data: {
-        mime_type: mimeType,
+      inlineData: {
+        mimeType: mimeType,
         data: base64Data,
       },
     },

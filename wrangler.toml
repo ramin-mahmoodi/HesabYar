@@ -7,7 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "hesabyar-db"
-database_id = "" # در داشبورد کلادفلر یا متغیرهای ورکر ست شود
+database_id = "9e5951ba-1248-4c79-b4c7-80aee1011488"
 
 # متغیرهای پیش‌فرض عمومی
 # توجه امنیتی: اطلاعات حساس (مثل BOT_TOKEN و GEMINI_API_KEY) را در داشبورد کلادفلر بخش Variables and Secrets ست کنید

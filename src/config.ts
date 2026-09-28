@@ -1,7 +1,8 @@
 export interface Env {
   BOT_TOKEN: string;
   DB: D1Database;
-  AI: Ai;
+  AI?: Ai;
+  GEMINI_API_KEY?: string;
   ALLOWED_USER_IDS?: string;
   DEFAULT_ACCOUNT_NAME?: string;
 }

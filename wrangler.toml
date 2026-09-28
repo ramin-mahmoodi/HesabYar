@@ -20,3 +20,5 @@ BOT_TOKEN = "8857780857:AAG5zIx3SWrKvX4yy9umP03wnPxpaMYoNnU"
 # در صورت تمایل آی‌دی عددی اکانت تلگرام خود را برای اختصاصی کردن ربات بگذارید (با کاما برای چند نفر)
 ALLOWED_USER_IDS = "564328773,672382862"
 DEFAULT_ACCOUNT_NAME = "حساب اصلی"
+# کلید رایگان Google Gemini از aistudio.google.com
+GEMINI_API_KEY = ""

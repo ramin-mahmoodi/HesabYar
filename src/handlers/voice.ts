@@ -1,6 +1,6 @@
 import { BotContext } from "../types";
 import { Database } from "../db/database";
-import { parseTransactionFromText, transcribeVoice } from "../services/ai";
+import { parseVoiceWithGemini } from "../services/ai";
 import { formatTransactionPreview } from "./receipt";
 import { transactionConfirmKeyboard } from "./keyboards";
 
@@ -15,7 +15,7 @@ export async function handleVoiceMessage(ctx: BotContext): Promise<void> {
   }
 
   // ۱. ارسال سریع پیام انتظار
-  const waitMsg = await ctx.reply("🎙 در حال شنیدن صدای شما و تبدیل به متن با مدل هوش مصنوعی Whisper...");
+  const waitMsg = await ctx.reply("🎙 در حال شنیدن صدای شما و استخراج اطلاعات مالی با هوش مصنوعی...");
 
   // ۲. منطق پردازش ویس در پس‌زمینه
   const processVoiceTask = async () => {
@@ -33,30 +33,10 @@ export async function handleVoiceMessage(ctx: BotContext): Promise<void> {
       }
 
       const audioBytes = new Uint8Array(await fileRes.arrayBuffer());
+      const mimeType = voice.mime_type || "audio/ogg";
 
-      // تبدیل گفتار به متن با Whisper
-      const transcribedText = await transcribeVoice(ctx.env, audioBytes);
-
-      if (!transcribedText || transcribedText.length < 2) {
-        await ctx.api.editMessageText(
-          ctx.chat!.id,
-          waitMsg.message_id,
-          "❌ صدایی از وویس شما تشخیص داده نشد. لطفاً واضح‌تر صحبت کنید."
-        ).catch(() => {});
-        return;
-      }
-
-      // به‌روزرسانی پیام به حالت استخراج هوشمند
-      await ctx.api.editMessageText(
-        ctx.chat!.id,
-        waitMsg.message_id,
-        `🎙 _متن شنیده‌شده:_\n«${transcribedText}»\n\n⏳ در حال استخراج مشخصات مالی با هوش مصنوعی...`,
-        { parse_mode: "Markdown" }
-      ).catch(() => {});
-
-      // استخراج اطلاعات تراکنش با مدل متنی
-      const parsed = await parseTransactionFromText(ctx.env, transcribedText);
-      parsed.notes = [`متن شنیده‌شده: «${transcribedText}»`];
+      // شنیدن صدا و استخراج تراکنش با Gemini
+      const { parsed } = await parseVoiceWithGemini(ctx.env, audioBytes, mimeType);
 
       const token = crypto.randomUUID().slice(0, 10);
       const db = new Database(ctx.env.DB);

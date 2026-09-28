@@ -54,7 +54,7 @@ export async function handleReceiptPhoto(ctx: BotContext): Promise<void> {
   }
 
   // ۱. ارسال سریع پیام انتظار به کاربر
-  const waitMsg = await ctx.reply("⏳ در حال دریافت و تحلیل هوشمند تصویر رسید با هوش مصنوعی کلادفلر...");
+  const waitMsg = await ctx.reply("⏳ در حال دریافت و تحلیل هوشمند تصویر رسید با هوش مصنوعی...");
 
   // ۲. منطق پردازش تصویر در پس‌زمینه
   const processImageTask = async () => {

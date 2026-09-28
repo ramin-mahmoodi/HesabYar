@@ -70,19 +70,51 @@ function extractJson(rawText: string): any {
   return JSON.parse(cleaned);
 }
 
-const CANDIDATE_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-latest",
-  "gemini-2.5-pro",
-  "gemini-flash",
-];
+let cachedModel: string | null = null;
 
-async function callGemini(
-  apiKey: string,
-  parts: any[],
-  modelIndex = 0
-): Promise<any> {
-  const model = CANDIDATE_MODELS[modelIndex] || "gemini-2.5-flash";
+async function getAvailableModel(apiKey: string): Promise<string> {
+  if (cachedModel) return cachedModel;
+
+  try {
+    const listRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+    );
+    if (listRes.ok) {
+      const data: any = await listRes.json();
+      const models: any[] = data.models || [];
+      const validModels = models.filter((m) =>
+        m.supportedGenerationMethods?.includes("generateContent")
+      );
+
+      const flash = validModels.find(
+        (m) => m.name?.includes("flash") && !m.name?.includes("deprecated")
+      );
+      if (flash && flash.name) {
+        const name = String(flash.name).replace(/^models\//, "");
+        cachedModel = name;
+        return name;
+      }
+
+      if (validModels.length > 0 && validModels[0].name) {
+        const name = String(validModels[0].name).replace(/^models\//, "");
+        cachedModel = name;
+        return name;
+      }
+    } else {
+      const err = await listRes.text();
+      if (listRes.status === 400 || listRes.status === 403) {
+        throw new Error(`کلید GEMINI_API_KEY نامعتبر است: ${err.slice(0, 100)}`);
+      }
+    }
+  } catch (e: any) {
+    if (e.message?.includes("کلید")) throw e;
+  }
+
+  return "gemini-1.5-flash-latest";
+}
+
+async function callGemini(apiKey: string, parts: any[]): Promise<any> {
+  const model = await getAvailableModel(apiKey);
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   const res = await fetch(url, {
@@ -99,10 +131,11 @@ async function callGemini(
 
   if (!res.ok) {
     const errText = await res.text();
-    if (res.status === 404 && modelIndex < CANDIDATE_MODELS.length - 1) {
-      return callGemini(apiKey, parts, modelIndex + 1);
+    if (res.status === 404 && cachedModel !== "gemini-1.5-flash-latest") {
+      cachedModel = "gemini-1.5-flash-latest";
+      return callGemini(apiKey, parts);
     }
-    throw new Error(`خطای سرور گوگل (${res.status}): ${errText.slice(0, 120)}`);
+    throw new Error(`خطای سرور گوگل (${res.status} مدل ${model}): ${errText.slice(0, 120)}`);
   }
 
   const json: any = await res.json();

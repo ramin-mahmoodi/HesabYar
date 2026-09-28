@@ -3,22 +3,13 @@ main = "src/index.ts"
 compatibility_date = "2024-11-01"
 compatibility_flags = ["nodejs_compat"]
 
-# هوش مصنوعی بومی کلادفلر (برای دیدن عکس رسید و تبدیل وویس با Whisper)
-[ai]
-binding = "AI"
-
 # پایگاه داده ابری کلادفلر (SQLite بر بستر Edge)
 [[d1_databases]]
 binding = "DB"
 database_name = "hesabyar-db"
-database_id = "9e5951ba-1248-4c79-b4c7-80aee1011488" # با دستور wrangler d1 create hesabyar-db شناسه خود را اینجا بگذارید
+database_id = "" # در داشبورد کلادفلر یا متغیرهای ورکر ست شود
 
-# متغیرهای محیطی
+# متغیرهای پیش‌فرض عمومی
+# توجه امنیتی: اطلاعات حساس (مثل BOT_TOKEN و GEMINI_API_KEY) را در داشبورد کلادفلر بخش Variables and Secrets ست کنید
 [vars]
-# توکن ربات تلگرام از BotFather (می‌توانید با wrangler secret put BOT_TOKEN هم ست کنید)
-BOT_TOKEN = "8857780857:AAG5zIx3SWrKvX4yy9umP03wnPxpaMYoNnU"
-# در صورت تمایل آی‌دی عددی اکانت تلگرام خود را برای اختصاصی کردن ربات بگذارید (با کاما برای چند نفر)
-ALLOWED_USER_IDS = "564328773,672382862"
 DEFAULT_ACCOUNT_NAME = "حساب اصلی"
-# کلید رایگان Google Gemini از aistudio.google.com
-GEMINI_API_KEY = ""

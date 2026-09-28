@@ -35,19 +35,19 @@ export async function startTransactionWizard(
 
   const text =
     `${icon} **ثبت ${label} - مرحله ۱ از ۳**\n\n` +
-    "لطفاً مبلغ را از گزینه‌های آماده زیر انتخاب کنید، یا مبلغ دلخواه را به تومان تایپ و ارسال کنید:\n" +
+    "لطفاً مبلغ را به تومان تایپ و ارسال کنید:\n" +
     "*(مثلاً: `۷۵۰۰۰` یا `150 هزار` یا `۱.۵ میلیون`)*";
 
   if (ctx.callbackQuery) {
     await ctx.answerCallbackQuery();
     await ctx.editMessageText(text, {
       parse_mode: "Markdown",
-      reply_markup: wizardAmountKeyboard(txType),
+      reply_markup: wizardAmountKeyboard(),
     });
   } else {
     await ctx.reply(text, {
       parse_mode: "Markdown",
-      reply_markup: wizardAmountKeyboard(txType),
+      reply_markup: wizardAmountKeyboard(),
     });
   }
 }
@@ -150,10 +150,11 @@ export async function handleTransactionCallbacks(ctx: BotContext): Promise<void>
     await ctx.answerCallbackQuery();
     await ctx.editMessageText(
       `${icon} **ثبت ${label} - مرحله ۱ از ۳**\n\n` +
-      "لطفاً مبلغ را انتخاب کنید یا مبلغ دلخواه را به تومان ارسال کنید:",
+      "لطفاً مبلغ را به تومان تایپ و ارسال کنید:\n" +
+      "*(مثلاً: `۷۵۰۰۰` یا `150 هزار` یا `۱.۵ میلیون`)*",
       {
         parse_mode: "Markdown",
-        reply_markup: wizardAmountKeyboard(txType),
+        reply_markup: wizardAmountKeyboard(),
       }
     );
     return;

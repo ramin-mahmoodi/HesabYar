@@ -84,37 +84,10 @@ export function accountsListKeyboard(): InlineKeyboard {
    ========================================================================= */
 
 /**
- * انتخاب سریع مبلغ برای ثبت تراکنش
+ * کیبورد مرحله ورود مبلغ (فقط انصراف، مبلغ توسط کاربر به صورت دستی تایپ می‌شود)
  */
-export function wizardAmountKeyboard(txType: "deposit" | "withdraw"): InlineKeyboard {
-  const kb = new InlineKeyboard();
-
-  if (txType === "withdraw") {
-    kb.text("۵۰,۰۰۰ ت", "wtx_a:50000")
-      .text("۱۰۰,۰۰۰ ت", "wtx_a:100000")
-      .text("۲۰۰,۰۰۰ ت", "wtx_a:200000")
-      .row()
-      .text("۵۰۰,۰۰۰ ت", "wtx_a:500000")
-      .text("۱,۰۰۰,۰۰۰ ت", "wtx_a:1000000")
-      .text("۲,۰۰۰,۰۰۰ ت", "wtx_a:2000000")
-      .row()
-      .text("۵,۰۰۰,۰۰۰ ت", "wtx_a:5000000")
-      .text("۱۰,۰۰۰,۰۰۰ ت", "wtx_a:10000000");
-  } else {
-    kb.text("۵۰۰,۰۰۰ ت", "wtx_a:500000")
-      .text("۱,۰۰۰,۰۰۰ ت", "wtx_a:1000000")
-      .text("۲,۰۰۰,۰۰۰ ت", "wtx_a:2000000")
-      .row()
-      .text("۵,۰۰۰,۰۰۰ ت", "wtx_a:5000000")
-      .text("۱۰,۰۰۰,۰۰۰ ت", "wtx_a:10000000")
-      .text("۲۰,۰۰۰,۰۰۰ ت", "wtx_a:20000000")
-      .row()
-      .text("۵۰,۰۰۰,۰۰۰ ت", "wtx_a:50000000")
-      .text("۱۰۰,۰۰۰,۰۰۰ ت", "wtx_a:100000000");
-  }
-
-  kb.row().text("❌ انصراف", "wtx_cancel");
-  return kb;
+export function wizardAmountKeyboard(): InlineKeyboard {
+  return new InlineKeyboard().text("❌ انصراف", "wtx_cancel");
 }
 
 /**
@@ -221,20 +194,11 @@ export function wizardBankSelectionKeyboard(): InlineKeyboard {
 }
 
 /**
- * انتخاب موجودی اولیه حساب جدید
+ * کیبورد مرحله موجودی اولیه حساب جدید
  */
 export function wizardInitialBalanceKeyboard(): InlineKeyboard {
   return new InlineKeyboard()
-    .text("۰ تومان (صفر)", "wacc_bal:0")
-    .row()
-    .text("۵۰۰,۰۰۰ ت", "wacc_bal:500000")
-    .text("۱,۰۰۰,۰۰۰ ت", "wacc_bal:1000000")
-    .row()
-    .text("۲,۰۰۰,۰۰۰ ت", "wacc_bal:2000000")
-    .text("۵,۰۰۰,۰۰۰ ت", "wacc_bal:5000000")
-    .row()
-    .text("۱۰,۰۰۰,۰۰۰ ت", "wacc_bal:10000000")
-    .text("۲۰,۰۰۰,۰۰۰ ت", "wacc_bal:20000000")
+    .text("۰ تومان (حساب خالی)", "wacc_bal:0")
     .row()
     .text("🔙 تغییر نام بانک", "wacc_back_bank")
     .text("❌ انصراف", "wacc_cancel");

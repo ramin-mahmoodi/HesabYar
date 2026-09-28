@@ -191,8 +191,8 @@ export async function handleAccountCallbacks(ctx: BotContext): Promise<void> {
     await ctx.answerCallbackQuery();
     await ctx.editMessageText(
       `💰 **مرحله ۲ از ۳: موجودی اولیه حساب «${bankName}»**\n\n` +
-      "موجودی فعلی این حساب چقدر است؟ (به تومان)\n" +
-      "*(می‌توانید صفر یا یکی از مبالغ آماده زیر را بزنید، یا مبلغ دلخواه را تایپ کنید)*",
+      "لطفاً موجودی اولیه این حساب را به تومان تایپ و ارسال کنید:\n" +
+      "*(اگر حساب خالی است، دکمه «۰ تومان» زیر را بزنید یا عدد 0 را بفرستید)*",
       {
         parse_mode: "Markdown",
         reply_markup: wizardInitialBalanceKeyboard(),
@@ -210,8 +210,8 @@ export async function handleAccountCallbacks(ctx: BotContext): Promise<void> {
     await ctx.answerCallbackQuery();
     await ctx.editMessageText(
       `💰 **مرحله ۲ از ۳: موجودی اولیه حساب «${bankName}»**\n\n` +
-      "موجودی فعلی این حساب چقدر است؟ (به تومان)\n" +
-      "*(می‌توانید صفر یا یکی از مبالغ آماده زیر را بزنید، یا مبلغ دلخواه را تایپ کنید)*",
+      "لطفاً موجودی اولیه این حساب را به تومان تایپ و ارسال کنید:\n" +
+      "*(اگر حساب خالی است، دکمه «۰ تومان» زیر را بزنید یا عدد 0 را بفرستید)*",
       {
         parse_mode: "Markdown",
         reply_markup: wizardInitialBalanceKeyboard(),
@@ -295,8 +295,8 @@ export async function handleAccountTextStep(
 
     await ctx.reply(
       `💰 **مرحله ۲ از ۳: موجودی اولیه حساب «${text}»**\n\n` +
-      "موجودی فعلی این حساب چقدر است؟ (به تومان)\n" +
-      "*(می‌توانید صفر یا یکی از مبالغ آماده زیر را بزنید، یا مبلغ دلخواه را تایپ کنید)*",
+      "لطفاً موجودی اولیه این حساب را به تومان تایپ و ارسال کنید:\n" +
+      "*(اگر حساب خالی است، دکمه «۰ تومان» زیر را بزنید یا عدد 0 را بفرستید)*",
       {
         parse_mode: "Markdown",
         reply_markup: wizardInitialBalanceKeyboard(),

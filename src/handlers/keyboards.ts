@@ -1,5 +1,7 @@
 import { InlineKeyboard, Keyboard } from "grammy";
+import { BankAccount } from "../types";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "../services/categories";
+import { formatMoneyTomans } from "../services/jalali";
 
 /**
  * کیبورد اصلی ربات
@@ -18,7 +20,7 @@ export function mainReplyKeyboard(): Keyboard {
 }
 
 /**
- * دکمه‌های تایید و ویرایش پیش‌نمایش تراکنش
+ * دکمه‌های تایید و ویرایش پیش‌نمایش تراکنش (از روی عکس رسید، ویس یا متن هوشمند)
  */
 export function transactionConfirmKeyboard(token: string): InlineKeyboard {
   return new InlineKeyboard()
@@ -31,7 +33,7 @@ export function transactionConfirmKeyboard(token: string): InlineKeyboard {
 }
 
 /**
- * کیبورد انتخاب دسته‌بندی
+ * کیبورد انتخاب دسته‌بندی برای پیش‌نمایش عکس/ویس
  */
 export function categoriesKeyboard(
   txType: "deposit" | "withdraw",
@@ -68,6 +70,185 @@ export function reportActionKeyboard(year: number, month: number): InlineKeyboar
     .row()
     .text("🍩 نمودار دایره‌ای هزینه‌ها", `rep_chart_pie:${year}:${month}`)
     .text("📊 نمودار مقایسه دخل و خرج", `rep_chart_bar:${year}:${month}`);
+}
+
+/**
+ * دکمه زیر فهرست حساب‌ها برای افزودن حساب جدید
+ */
+export function accountsListKeyboard(): InlineKeyboard {
+  return new InlineKeyboard().text("➕ افزودن حساب یا کارت جدید", "wacc_start");
+}
+
+/* =========================================================================
+   کیبوردهای شیشه‌ای ثبت مرحله به مرحله تراکنش (Transaction Wizard Keyboards)
+   ========================================================================= */
+
+/**
+ * انتخاب سریع مبلغ برای ثبت تراکنش
+ */
+export function wizardAmountKeyboard(txType: "deposit" | "withdraw"): InlineKeyboard {
+  const kb = new InlineKeyboard();
+
+  if (txType === "withdraw") {
+    kb.text("۵۰,۰۰۰ ت", "wtx_a:50000")
+      .text("۱۰۰,۰۰۰ ت", "wtx_a:100000")
+      .text("۲۰۰,۰۰۰ ت", "wtx_a:200000")
+      .row()
+      .text("۵۰۰,۰۰۰ ت", "wtx_a:500000")
+      .text("۱,۰۰۰,۰۰۰ ت", "wtx_a:1000000")
+      .text("۲,۰۰۰,۰۰۰ ت", "wtx_a:2000000")
+      .row()
+      .text("۵,۰۰۰,۰۰۰ ت", "wtx_a:5000000")
+      .text("۱۰,۰۰۰,۰۰۰ ت", "wtx_a:10000000");
+  } else {
+    kb.text("۵۰۰,۰۰۰ ت", "wtx_a:500000")
+      .text("۱,۰۰۰,۰۰۰ ت", "wtx_a:1000000")
+      .text("۲,۰۰۰,۰۰۰ ت", "wtx_a:2000000")
+      .row()
+      .text("۵,۰۰۰,۰۰۰ ت", "wtx_a:5000000")
+      .text("۱۰,۰۰۰,۰۰۰ ت", "wtx_a:10000000")
+      .text("۲۰,۰۰۰,۰۰۰ ت", "wtx_a:20000000")
+      .row()
+      .text("۵۰,۰۰۰,۰۰۰ ت", "wtx_a:50000000")
+      .text("۱۰۰,۰۰۰,۰۰۰ ت", "wtx_a:100000000");
+  }
+
+  kb.row().text("❌ انصراف", "wtx_cancel");
+  return kb;
+}
+
+/**
+ * انتخاب دسته‌بندی با دکمه‌های شیشه‌ای مرحله به مرحله
+ */
+export function wizardCategoryKeyboard(txType: "deposit" | "withdraw"): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  const list = txType === "deposit" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+
+  for (let i = 0; i < list.length; i += 2) {
+    const item1 = list[i];
+    const item2 = list[i + 1];
+
+    if (item2) {
+      kb.text(item1.label, `wtx_c:${item1.key}`).text(item2.label, `wtx_c:${item2.key}`);
+    } else {
+      kb.text(item1.label, `wtx_c:${item1.key}`);
+    }
+    kb.row();
+  }
+
+  kb.text("🔙 تغییر مبلغ", "wtx_back_amt").text("❌ انصراف", "wtx_cancel");
+  return kb;
+}
+
+/**
+ * انتخاب حساب بانکی با دکمه‌های شیشه‌ای
+ */
+export function wizardAccountsKeyboard(accounts: BankAccount[]): InlineKeyboard {
+  const kb = new InlineKeyboard();
+
+  for (const acc of accounts) {
+    const bal = formatMoneyTomans(acc.current_balance || 0);
+    kb.text(`💳 ${acc.name} (${bal})`, `wtx_acc:${acc.id}`).row();
+  }
+
+  kb.text("🔙 تغییر دسته‌بندی", "wtx_back_cat").text("❌ انصراف", "wtx_cancel");
+  return kb;
+}
+
+/**
+ * پیش‌نمایش و تایید نهایی تراکنش مرحله‌ای
+ */
+export function wizardConfirmKeyboard(): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("✅ تایید و ثبت در حسابداری", "wtx_confirm")
+    .row()
+    .text("✍️ افزودن بابت / توضیح", "wtx_add_desc")
+    .text("❌ انصراف", "wtx_cancel");
+}
+
+/**
+ * کیبورد مرحله توضیحات
+ */
+export function wizardDescKeyboard(): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("⏩ ثبت بدون توضیح", "wtx_confirm")
+    .row()
+    .text("❌ انصراف", "wtx_cancel");
+}
+
+/* =========================================================================
+   کیبوردهای شیشه‌ای افزودن حساب بانکی جدید (Account Wizard Keyboards)
+   ========================================================================= */
+
+export const POPULAR_BANKS = [
+  { code: "mellat", label: "🔴 بانک ملت", name: "بانک ملت" },
+  { code: "melli", label: "🔵 بانک ملی", name: "بانک ملی" },
+  { code: "saderat", label: "🟣 بانک صادرات", name: "بانک صادرات" },
+  { code: "pasargad", label: "🟢 پاسارگاد", name: "بانک پاسارگاد" },
+  { code: "saman", label: "🟦 سامان", name: "بانک سامان" },
+  { code: "blu", label: "🔷 بلوبانک", name: "بلوبانک" },
+  { code: "sepah", label: "🟡 بانک سپه", name: "بانک سپه" },
+  { code: "tejarat", label: "💠 بانک تجارت", name: "بانک تجارت" },
+  { code: "ayandeh", label: "🏛 بانک آینده", name: "بانک آینده" },
+  { code: "resalat", label: "🕌 بانک رسالت", name: "بانک رسالت" },
+  { code: "parsian", label: "🏬 پارسیان", name: "بانک پارسیان" },
+  { code: "keshavarzi", label: "🌾 کشاورزی", name: "بانک کشاورزی" },
+  { code: "cash", label: "💵 نقدی / کیف پول", name: "کیف پول نقدی" },
+];
+
+/**
+ * انتخاب نام بانک برای ساخت حساب جدید
+ */
+export function wizardBankSelectionKeyboard(): InlineKeyboard {
+  const kb = new InlineKeyboard();
+
+  for (let i = 0; i < POPULAR_BANKS.length; i += 3) {
+    const b1 = POPULAR_BANKS[i];
+    const b2 = POPULAR_BANKS[i + 1];
+    const b3 = POPULAR_BANKS[i + 2];
+
+    kb.text(b1.label, `wacc_b:${b1.code}`);
+    if (b2) kb.text(b2.label, `wacc_b:${b2.code}`);
+    if (b3) kb.text(b3.label, `wacc_b:${b3.code}`);
+    kb.row();
+  }
+
+  kb.text("✍️ تایپ نام دلخواه", "wacc_b_custom")
+    .row()
+    .text("❌ انصراف", "wacc_cancel");
+
+  return kb;
+}
+
+/**
+ * انتخاب موجودی اولیه حساب جدید
+ */
+export function wizardInitialBalanceKeyboard(): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("۰ تومان (صفر)", "wacc_bal:0")
+    .row()
+    .text("۵۰۰,۰۰۰ ت", "wacc_bal:500000")
+    .text("۱,۰۰۰,۰۰۰ ت", "wacc_bal:1000000")
+    .row()
+    .text("۲,۰۰۰,۰۰۰ ت", "wacc_bal:2000000")
+    .text("۵,۰۰۰,۰۰۰ ت", "wacc_bal:5000000")
+    .row()
+    .text("۱۰,۰۰۰,۰۰۰ ت", "wacc_bal:10000000")
+    .text("۲۰,۰۰۰,۰۰۰ ت", "wacc_bal:20000000")
+    .row()
+    .text("🔙 تغییر نام بانک", "wacc_back_bank")
+    .text("❌ انصراف", "wacc_cancel");
+}
+
+/**
+ * شماره کارت اختیاری
+ */
+export function wizardCardNumberKeyboard(): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("⏩ رد شدن (بدون شماره کارت)", "wacc_card:skip")
+    .row()
+    .text("🔙 تغییر موجودی", "wacc_back_bal")
+    .text("❌ انصراف", "wacc_cancel");
 }
 
 /**

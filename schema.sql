@@ -48,6 +48,22 @@ CREATE INDEX IF NOT EXISTS idx_ledger_user ON ledger_entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_ledger_month ON ledger_entries(user_id, jalali_year, jalali_month);
 CREATE INDEX IF NOT EXISTS idx_ledger_account ON ledger_entries(account_id);
 
+-- پیش‌نویس تراکنش‌های معلق تایید (عکس و صوت)
+CREATE TABLE IF NOT EXISTS pending_transactions (
+    token TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    data TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- وضعیت تعاملی مرحله به مرحله کاربر (Session Wizard)
+CREATE TABLE IF NOT EXISTS user_states (
+    user_id INTEGER PRIMARY KEY,
+    state TEXT NOT NULL,
+    data TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- درج کاتالوگ پیش‌فرض بانک‌ها
 INSERT OR IGNORE INTO banks (code, name_fa, card_prefixes) VALUES
 ('blu', 'بلوبانک (سامان)', '621986'),

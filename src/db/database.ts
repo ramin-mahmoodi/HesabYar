@@ -63,6 +63,14 @@ export class Database {
         );
       `),
       this.db.prepare(`
+        CREATE TABLE IF NOT EXISTS user_states (
+          user_id INTEGER PRIMARY KEY,
+          state TEXT NOT NULL,
+          data TEXT NOT NULL,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+      `),
+      this.db.prepare(`
         INSERT OR IGNORE INTO banks (id, code, name_fa, card_prefixes) VALUES
         (1, 'blu', 'بلوبانک (سامان)', '621986'),
         (2, 'mellat', 'ملت', '610433,991975'),
@@ -338,12 +346,63 @@ export class Database {
   }
 
   /**
+   * دریافت مشخصات یک حساب با شناسه
+   */
+  async getAccount(id: number): Promise<BankAccount | null> {
+    const acc = await this.db
+      .prepare("SELECT * FROM bank_accounts WHERE id = ?")
+      .bind(id)
+      .first<BankAccount>();
+    return acc || null;
+  }
+
+  /**
    * حذف پیش‌نویس پس از ثبت نهایی یا لغو
    */
   async deleteDraft(token: string): Promise<void> {
     await this.db
       .prepare("DELETE FROM pending_transactions WHERE token = ?")
       .bind(token)
+      .run();
+  }
+
+  /**
+   * ذخیره وضعیت مرحله‌ای کاربر (Session Wizard)
+   */
+  async setUserState(userId: number, state: string, data: any = {}): Promise<void> {
+    await this.db
+      .prepare(`
+        INSERT OR REPLACE INTO user_states (user_id, state, data, updated_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      `)
+      .bind(userId, state, JSON.stringify(data))
+      .run();
+  }
+
+  /**
+   * دریافت وضعیت مرحله‌ای کاربر
+   */
+  async getUserState(userId: number): Promise<{ state: string; data: any } | null> {
+    const row = await this.db
+      .prepare("SELECT state, data FROM user_states WHERE user_id = ?")
+      .bind(userId)
+      .first<{ state: string; data: string }>();
+
+    if (!row) return null;
+    try {
+      return { state: row.state, data: JSON.parse(row.data) };
+    } catch {
+      return { state: row.state, data: {} };
+    }
+  }
+
+  /**
+   * پاک کردن وضعیت مرحله‌ای کاربر
+   */
+  async clearUserState(userId: number): Promise<void> {
+    await this.db
+      .prepare("DELETE FROM user_states WHERE user_id = ?")
+      .bind(userId)
       .run();
   }
 }

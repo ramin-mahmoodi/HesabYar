@@ -3,12 +3,13 @@ import { BotContext } from "./types";
 import { Env, isUserAllowed } from "./config";
 import { Database } from "./db/database";
 import { handleHelp, handleStart } from "./handlers/start";
-import { handleAccounts, handleNewAccount } from "./handlers/accounts";
+import { handleAccounts, handleAccountCallbacks, handleNewAccount, startAccountWizard } from "./handlers/accounts";
 import {
   handleIncomingText,
   handleManualDeposit,
   handleManualWithdraw,
   handleTransactionCallbacks,
+  startTransactionWizard,
 } from "./handlers/transaction";
 import { handleReceiptPhoto } from "./handlers/receipt";
 import { handleVoiceMessage } from "./handlers/voice";
@@ -58,63 +59,86 @@ export default {
     await db.init();
 
     // ۱. دستورات اصلی
-    bot.command("start", handleStart);
+    bot.command("start", async (ctx) => {
+      if (ctx.from) await db.clearUserState(ctx.from.id);
+      await handleStart(ctx);
+    });
     bot.command("help", handleHelp);
+    bot.command("cancel", async (ctx) => {
+      if (ctx.from) await db.clearUserState(ctx.from.id);
+      await ctx.reply(" عملیات جاری لغو شد. می‌توانید از منوی پایین گزینه مورد نظر را انتخاب کنید.");
+    });
     bot.command("accounts", handleAccounts);
     bot.command("newaccount", handleNewAccount);
     bot.command("deposit", handleManualDeposit);
     bot.command("withdraw", handleManualWithdraw);
     bot.command("report", handleReport);
 
-    // ۲. دکمه‌های کیبورد پایین
+    // ۲. دکمه‌های کیبورد پایین (ثبت مرحله به مرحله با دکمه‌های شیشه‌ای)
     bot.hears("➕ ثبت واریز (درآمد)", async (ctx) => {
-      await ctx.reply("مبلغ و بابت واریز را بفرستید.\nمثال: `/deposit 2000000 حقوق`", {
-        parse_mode: "Markdown",
-      });
+      await startTransactionWizard(ctx, "deposit");
     });
 
     bot.hears("➖ ثبت برداشت (خرج)", async (ctx) => {
-      await ctx.reply("مبلغ و بابت هزینه را بفرستید.\nمثال: `/withdraw 150000 بنزین`", {
-        parse_mode: "Markdown",
-      });
+      await startTransactionWizard(ctx, "withdraw");
     });
 
     bot.hears("📷 ارسال رسید (عکس)", async (ctx) => {
+      if (ctx.from) await db.clearUserState(ctx.from.id);
       await ctx.reply("📷 لطفاً تصویر رسید بانکی یا فاکتور خرید را ارسال کنید.");
     });
 
     bot.hears("🎙 ثبت با ویس (صدا)", async (ctx) => {
+      if (ctx.from) await db.clearUserState(ctx.from.id);
       await ctx.reply(
-        "🎙 دکمه ضبط صدا را نگه دارید و خرجتان را بگویید!\n" +
-          "مثال: «امروز پنجاه هزار تومن دادم کرایه اسنپ»"
+        "🎙 دکمه ضبط صدا را نگه دارید و خرج یا درآمد خود را بگویید!\n" +
+          "مثال: «امروز پنجاه هزار تومن دادم بنزین»"
       );
     });
 
-    bot.hears("📊 گزارش ماه جاری", handleReport);
-    bot.hears("💳 حساب‌ها و کارت‌ها", handleAccounts);
+    bot.hears("📊 گزارش ماه جاری", async (ctx) => {
+      if (ctx.from) await db.clearUserState(ctx.from.id);
+      await handleReport(ctx);
+    });
+
+    bot.hears("💳 حساب‌ها و کارت‌ها", async (ctx) => {
+      if (ctx.from) await db.clearUserState(ctx.from.id);
+      await handleAccounts(ctx);
+    });
 
     // ۳. ورودی‌های چندرسانه‌ای
-    bot.on("message:photo", handleReceiptPhoto);
+    bot.on("message:photo", async (ctx) => {
+      if (ctx.from) await db.clearUserState(ctx.from.id);
+      await handleReceiptPhoto(ctx);
+    });
+
     bot.on("message:document", async (ctx) => {
       const mime = ctx.message.document.mime_type || "";
       if (mime.startsWith("image/")) {
+        if (ctx.from) await db.clearUserState(ctx.from.id);
         await handleReceiptPhoto(ctx);
       } else {
         await ctx.reply("لطفاً فایل تصویری، پیام صوتی یا متن ارسال کنید.");
       }
     });
 
-    bot.on(["message:voice", "message:audio"], handleVoiceMessage);
+    bot.on(["message:voice", "message:audio"], async (ctx) => {
+      if (ctx.from) await db.clearUserState(ctx.from.id);
+      await handleVoiceMessage(ctx);
+    });
 
-    // ۴. متن‌های ارسالی (پیامک بانکی یا جملات آزاد)
+    // ۴. متن‌های ارسالی (مراحل ویزارد یا پیامک بانکی)
     bot.on("message:text", handleIncomingText);
 
-    // ۵. کال‌بک‌های اینلاین
+    // ۵. کال‌بک‌های دکمه‌های شیشه‌ای (اینلاین)
     bot.on("callback_query:data", async (ctx) => {
       const data = ctx.callbackQuery.data;
       if (data.startsWith("rep_")) {
         await handleReportCallbacks(ctx);
+      } else if (data.startsWith("wacc_")) {
+        await handleAccountCallbacks(ctx);
       } else if (
+        data.startsWith("wtx_") ||
         data.startsWith("tx_") ||
         data.startsWith("cat_") ||
         data === "cancel_action"

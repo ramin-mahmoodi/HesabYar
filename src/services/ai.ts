@@ -67,18 +67,30 @@ export async function parseReceiptWithVision(
     try {
       response = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", payload);
     } catch (aiErr: any) {
-      const errStr = String(aiErr?.message || aiErr).toLowerCase();
-      if (errStr.includes("agree") || errStr.includes("license") || errStr.includes("policy")) {
-        // موافقت خودکار یک‌باره با قوانین متای کلادفلر
-        console.log("Automatically accepting Meta Llama license agreement...");
-        await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", { prompt: "agree" } as any);
+      const errStr = String(aiErr?.message || aiErr);
+      if (
+        errStr.includes("agree") ||
+        errStr.includes("license") ||
+        errStr.includes("policy") ||
+        errStr.includes("5016")
+      ) {
+        // ثبت تاییدیه و تلاش مجدد در همان لحظه
+        try {
+          await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", { prompt: "agree" } as any);
+        } catch {}
         response = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", payload);
       } else {
         throw aiErr;
       }
     }
 
-    const outputText = response.response || JSON.stringify(response);
+    let outputText = response.response || JSON.stringify(response);
+    if (outputText.includes("Thank you for agreeing")) {
+      // اگر در پاسخ هم تاییدیه آمده بود، یک بار دیگر فراخوانی کن تا تحلیل واقعی را بگیرد
+      response = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", payload);
+      outputText = response.response || JSON.stringify(response);
+    }
+
     const data = extractJsonFromResponse(outputText);
 
     const txType: "deposit" | "withdraw" = data.type === "deposit" ? "deposit" : "withdraw";
